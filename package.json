@@ -11,7 +11,7 @@
     "ffmpeg": "0.0.4",
     "libsodium-wrappers": "^0.7.3",
     "node-opus": "^0.2.9",
-    "npm": "^6.12.0",
+    "npm": "^6.13.4",
     "opusscript": "0.0.6",
     "request": "^2.88.0",
     "twitter": "^1.7.1",
