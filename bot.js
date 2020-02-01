@@ -22,13 +22,7 @@ const botMsg = {
     ".volume": true
   };
 
-kevBot.login(auth.token); // Bot login
-
-kevBot.music = require("discord.js-musicbot-addon");
-kevBot.music.start(kevBot, {
-  youtubeKey: auth.youtubeKey,
-  botPrefix: "k."
-}); // Initializes music search through youtube by listening for commands such as "k.play".
+// TODO rework music implementation.
 
 kevBot.on("ready", () => {
   console.log("KevBot Ready");
