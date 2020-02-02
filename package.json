@@ -15,6 +15,7 @@
     "opusscript": "0.0.6",
     "request": "^2.88.0",
     "sodium": "^3.0.2",
+    "to-zalgo": "^1.0.1",
     "twitter": "^1.7.1",
     "uws": "^9.14.0",
     "ytdl-core": "^1.0.7",
@@ -23,7 +24,7 @@
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node bot.js"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
