@@ -1,3 +1,4 @@
+// Module imports.
 const request = require("request"),
   twitterAuth = require("./twitterauth.json"),
   Twitter = require("twitter"),
@@ -6,8 +7,10 @@ const request = require("request"),
   ytsr = require("ytsr"),
   ytdl = require("ytdl-core"),
   chalk = require("chalk"),
-  toZalgo = require("to-zalgo");
+  toZalgo = require("to-zalgo"),
+  Discord = require("discord.js");
 
+// Twitter api setup.
 const TwitterAPI = new Twitter({
   consumer_key: twitterAuth.consumer_key,
   consumer_secret: twitterAuth.consumer_secret,
@@ -15,8 +18,7 @@ const TwitterAPI = new Twitter({
   access_token_secret: twitterAuth.access_token_secret
 });
 
-const Discord = require("discord.js");
-
+// Object for mapping commands to class methods.
 const botMsgEnum = {
   ".godEmperor": "_theDon",
   ".Norris": "_chuckNorrisJoke",
@@ -29,7 +31,18 @@ const botMsgEnum = {
   ".volume": "setVolume"
 };
 
+/**
+ * @class KevBot
+ *
+ * Class for wrapping all discord bot functionality.
+ */
 class KevBot {
+  /**
+   * @constructor
+   *
+   * Initializes discord client, logs the bot in, adds base listeners,
+   * and defines some default values for queue length and volume.
+   */
   constructor() {
     this.bot = new Discord.Client();
     this.bot.login(auth.token);
@@ -39,6 +52,11 @@ class KevBot {
     this._volume = 5;
   }
 
+  /**
+   * @method setVolume
+   * @param {*} msg Message sent in from user calling bot.
+   * @param {*} val Value that is being used to set the volume with.
+   */
   setVolume(msg, val) {
     if (isNaN(+val)) {
       msg.channel.send("Volume must be a number.");
@@ -48,13 +66,19 @@ class KevBot {
     this._volume = val;
   }
 
+  /**
+   * @method _messageListener
+   * @param {*} message Message sent from user calling bot.
+   *
+   * Listener for handling messages in the discord server.
+   */
   _messageListener(message) {
     this._checkTroll(message);
     console.log(chalk.whiteBright`${message.member}: ${message.content}`);
     if (message.author.bot) {
       return;
     } else {
-      if (message.content.substring(0, 2) == "k.") {
+      if (message.content.substring(0, 2) === "k.") {
         // Checking if the message begins with "k." to determine when the bot is being utilized.
         let args = message.content.substring(1).split(" "), // Builds and array of arguments for the current command.
           cmd = args[0]; // Grabs the command from the list of arguments, which is always the first argument.
@@ -72,8 +96,7 @@ class KevBot {
     }
   }
 
-  _checkTroll(msg){
-  }
+  _checkTroll(msg) {}
 
   _getUserInfo(msg) {
     if (!msg.member.voiceChannel) {
