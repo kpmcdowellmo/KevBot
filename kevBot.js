@@ -15,15 +15,15 @@ const TwitterAPI = new Twitter({
   access_token_secret: twitterAuth.access_token_secret
 });
 
-const Discord = require("discord.js"),
-  kevBot = new Discord.Client();
+const Discord = require("discord.js");
 
 const botMsgEnum = {
   ".godEmperor": "_theDon",
   ".Norris": "_chuckNorrisJoke",
   ".help": "_getHelp",
   ".play": "_playSongHandler",
-  ".skip": "_skipSong", // WIP
+  ".skip": "_skipSong",
+  ".stop": "_stopSong",
   ".search": "_searchSongsHandler",
   ".zalgo": "_sendZalgo",
   ".volume": "setVolume"
@@ -49,6 +49,7 @@ class KevBot {
   }
 
   _messageListener(message) {
+    this._checkTroll(message);
     console.log(chalk.whiteBright`${message.member}: ${message.content}`);
     if (message.author.bot) {
       return;
@@ -69,6 +70,9 @@ class KevBot {
         }
       }
     }
+  }
+
+  _checkTroll(msg){
   }
 
   _getUserInfo(msg) {
@@ -124,6 +128,8 @@ class KevBot {
       volume: this._volume,
       playing: true
     };
+    console.log(chalk.white`Creating queue for guild: ${guild.id}`);
+    msg.reply("No queue present, creating queue...");
     this._songqueue.set(guild.id, queueObj);
     return queueObj;
   }
@@ -132,40 +138,44 @@ class KevBot {
     const dispatcher = queue.connection
       .playStream(ytdl(song))
       .on("end", () => {
-        queue.textChannel.send("Queue empty. Leaving.");
+        queue.textChannel.send("Song over.");
         console.log(
           chalk.gray`Queue empty. Leaving channel: ${queue.voiceChannel}`
         );
         queue.songs.shift();
-        this.__playSong(guild, queue.songs[0]);
+        this.__playSong(queue, guild, queue.songs[0]);
       })
       .on("error", e => {
+        queue.textChannel.send(
+          `Error Occurred when trying to play song. Sorry!`
+        );
         console.error(chalk.red`Error Occurred playing song: ${e}`);
       });
 
+    queue.textChannel.send(`Playing song at volume: ${this._volume}`);
     dispatcher.setVolumeLogarithmic(this._volume / 5);
   }
 
   __playSong(queue, guild, song) {
     if (!song) {
+      queue.textChannel.send("Queue empty. Bye!");
       queue.voiceChannel.leave();
       this._songqueue.delete(guild.id);
       return;
     }
-
-    this.__setUpDispatcher(queue, guild, song);
+    queue.textChannel.send(`Loading song...`);
+    this.__setUpDispatcher(song, queue, guild);
   }
 
   async __updateQueue(msg, queue, query) {
     if (!queue) {
       const newQueue = this.__createQueue(msg, msg.guild);
       try {
-        const song = await this.__getSongURL(query),
+        const song = await this.__getSongURL(msg, query),
           connection = await newQueue.voiceChannel.join();
         newQueue.connection = connection;
         newQueue.songs.push(song);
-        console.log("test");
-        this.__playSong(song, newQueue, msg.guild);
+        this.__playSong(newQueue, msg.guild, song);
       } catch (e) {
         console.log(
           chalk.red`Error occured when connecting to the voice chat${e}`
@@ -175,15 +185,16 @@ class KevBot {
     } else {
       if (queue.songs.length < this._maxQueue) {
         console.log(queue);
-        const song = await this.__getSongURL(query);
+        const song = await this.__getSongURL(msg, query);
         queue.songs.push(song);
       }
     }
   }
 
-  async __getSongURL(query) {
+  async __getSongURL(msg, query) {
     try {
       console.log(chalk.white`Querying songs for: "${query}"`);
+      msg.channel.send(`Querying songs for: ${query}...`);
       const result = await ytsr(query, {
         limit: 5
       });
@@ -214,7 +225,50 @@ class KevBot {
     msg.channel.send("Help is currently a work in progress.");
   }
 
-  _skipSong() {}
+  _skipSong(msg) {
+    if (!msg.member.voiceChannel) {
+      console.log(
+        chalk.red`${msg.member} attempted to skip a song without being in the voice channel.`
+      );
+      msg.channel.send(
+        `@${msg.member} You need to be in the voice channel to skip songs.`
+      );
+      return;
+    }
+    const queue = this._songqueue.get(msg.guild.id);
+    if (queue) {
+      msg.channel.send("Skipping current song...");
+      queue.connection.dispatcher.end();
+    } else {
+      msg.channel.send(`@${msg.member} There is no queue to skip songs in....`);
+      console.error(
+        `${msg.member} tried to skip songs when no queue was present.`
+      );
+    }
+  }
+
+  _stopSong(msg) {
+    if (!msg.member.voiceChannel) {
+      console.log(
+        chalk.red`${msg.member} attempted to stop music without being in the voice channel.`
+      );
+      msg.channel.send(
+        `@${msg.member} You need to be in the voice channel to stop music.`
+      );
+      return;
+    }
+    const queue = this._songqueue.get(msg.guild.id);
+    if (queue) {
+      msg.channel.send("Stopping music and clearing queue...");
+      queue.songs = [];
+      queue.connection.dispatcher.end();
+    } else {
+      msg.channel.send("There is no queue to stop music for....");
+      console.error(
+        `${msg.member} tried to stop music when no queue was present.`
+      );
+    }
+  }
 
   _addBotListeners() {
     this.bot.on("message", message => this._messageListener(message));
@@ -242,6 +296,14 @@ class KevBot {
         }
       }
     );
+  }
+
+  _sendZalgo(msg, args) {
+    if (args) {
+      msg.channel.send(toZalgo(toZalgo(args.join(" "))));
+    } else {
+      msg.channel.send("You need to provide some text for changing.");
+    }
   }
 
   _getHelp(message) {
