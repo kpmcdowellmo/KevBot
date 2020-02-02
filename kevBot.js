@@ -24,13 +24,12 @@ const botMsgEnum = {
   ".godEmperor": "_theDon",
   ".Norris": "_chuckNorrisJoke",
   ".help": "_getHelp",
-  ".play": "",
-  ".skip": true, // WIP
-  ".search": true,
-  ".volume": true
+  ".play": "_playSong",
+  ".skip": "_skipSong", // WIP
+  ".search": "_searchSongs"
 };
 
-class kevBot {
+class KevBot {
   constructor() {
     this.bot = new Discord.Client();
     this.bot.login(auth.token);
@@ -59,12 +58,24 @@ class kevBot {
     }
   }
 
+  _searchSongs(msg, query) {
+  
+  }
+
   _errorListener(err) {
     console.log(chalk.red("error", err));
   }
 
   _readyListener() {
     console.log(chalk.green("KevBot Ready"));
+  }
+
+  _getHelp() {
+
+  }
+
+  _skipSong(){
+
   }
 
   _addBotListeners() {
@@ -74,10 +85,6 @@ class kevBot {
   }
 
   _theDon(message) {
-    const options = {
-      screen_name: "realDonaldTrump",
-      count: 5
-    };
     TwitterAPI.get(
       "statuses/user_timeline",
       {
@@ -87,7 +94,7 @@ class kevBot {
       (error, tweets, response) => {
         if (error) {
           kevBot.channel.send("Can't get your dose of the Don... :(");
-          console.log(error);
+          console.log(chalk.red(error));
         } else {
           tweets.forEach(function(tweet) {
             let responseMessage =
@@ -121,3 +128,5 @@ class kevBot {
     );
   }
 }
+
+module.exports = KevBot;
