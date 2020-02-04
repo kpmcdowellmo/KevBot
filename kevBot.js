@@ -270,10 +270,7 @@ class KevBot {
   async __updateQueue(msg, queue, query) {
     if (!queue) {
       const newQueue = this.__createQueue(msg, msg.guild);
-      try {
-        const song = await this.__getSongURL(msg, query),
-          connection = await newQueue.voiceChannel.join();
-        newQueue.connection = connection;
+      try {*
         newQueue.songs.push(song);
         this.__playSong(newQueue, msg.guild, song);
       } catch (e) {
