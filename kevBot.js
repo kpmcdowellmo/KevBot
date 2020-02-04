@@ -31,6 +31,13 @@ const botMsgEnum = {
   ".volume": "setVolume"
 };
 
+const trollEnum = {
+  Arloq: "_trollArloq",
+  Carabachi: "_trollCarabachi",
+  Kilerbomb: "_trollKiler",
+  Willy: "_trollWilly"
+};
+
 /**
  * @class KevBot
  *
@@ -95,9 +102,30 @@ class KevBot {
       }
     }
   }
+  /**
+   * @method _checkTroll
+   * @param {*} msg
+   *
+   * Method for trolling people in the chat.
+   */
+  _checkTroll(msg) {
+    if (message.content.includes("tpg")) {
+      this._trollAll(msg);
+      return;
+    }
 
-  _checkTroll(msg) {}
+    if(message.content.includes("meme")){
+      this[trollEnum[message.author.username]](msg);
+    }
+  }
 
+  /**
+   * @method _getUserInfo
+   * @param {*} msg 
+   * 
+   * Method for getting the voice channel and user permissions associated with
+   * a user calling KevBot for playing music.
+   */
   _getUserInfo(msg) {
     if (!msg.member.voiceChannel) {
       console.error(chalk.red`User not in voice channel`);
@@ -120,6 +148,13 @@ class KevBot {
     return result;
   }
 
+  /**
+   * @method _validateSongQuery
+   * @param {*} msg 
+   * @param {*} query 
+   * 
+   * Method for validating queries made for searching songs.
+   */
   _validateSongQuery(msg, query) {
     if (query && query.length > 5) {
       return true;
@@ -130,7 +165,16 @@ class KevBot {
     }
   }
 
+  /**
+   * @method _searchSongsHandler
+   * @param {*} msg 
+   * @param {*} query 
+   * 
+   * Method for handling a song search query. WIP
+   */
   async _searchSongsHandler(msg, query) {
+    msg.channel.send("This feature is still a work in progress. Sorry.");
+    return;
     const results = await ytsr(query, {
         limit: 5
       }),
@@ -142,6 +186,13 @@ class KevBot {
     }
   }
 
+  /**
+   * @method __createQueue
+   * @param {*} msg 
+   * @param {*} guild 
+   * 
+   * Method for creating a song queue.
+   */
   __createQueue(msg, guild) {
     const queueObj = {
       textChannel: msg.channel,
@@ -157,6 +208,15 @@ class KevBot {
     return queueObj;
   }
 
+  /**
+   * @method __setUpDispatcher
+   * @param {*} song 
+   * @param {*} queue 
+   * @param {*} guild 
+   * 
+   * Method for handling creating a dispatcher for playing music and setting up the
+   * appropriate listeners for songs ending or errors.
+   */
   __setUpDispatcher(song, queue, guild) {
     const dispatcher = queue.connection
       .playStream(ytdl(song))
@@ -179,6 +239,14 @@ class KevBot {
     dispatcher.setVolumeLogarithmic(this._volume / 5);
   }
 
+  /**
+   * @method __playSong
+   * @param {*} queue 
+   * @param {*} guild 
+   * @param {*} song 
+   * 
+   * Method for setting up everything needed to play music.
+   */
   __playSong(queue, guild, song) {
     if (!song) {
       queue.textChannel.send("Queue empty. Bye!");
@@ -190,6 +258,15 @@ class KevBot {
     this.__setUpDispatcher(song, queue, guild);
   }
 
+  /**
+   * @method __updateQueue
+   * @param {*} msg 
+   * @param {*} queue 
+   * @param {*} query 
+   * 
+   * Method for updating a queue or creating a new one if none is present
+   * for the guild the bot call was made in.
+   */
   async __updateQueue(msg, queue, query) {
     if (!queue) {
       const newQueue = this.__createQueue(msg, msg.guild);
@@ -214,6 +291,14 @@ class KevBot {
     }
   }
 
+  /**
+   * @method __getSongURL
+   * @param {*} msg 
+   * @param {*} query 
+   * 
+   * Method for getting a url to a youtube video based on
+   * the query that was sent for music.
+   */
   async __getSongURL(msg, query) {
     try {
       console.log(chalk.white`Querying songs for: "${query}"`);
@@ -228,6 +313,13 @@ class KevBot {
     }
   }
 
+  /**
+   * @method _playSongHandler
+   * @param {*} msg 
+   * @param {*} query 
+   * 
+   * Handler for when the k.play command is sent.
+   */
   async _playSongHandler(msg, query) {
     const songQuery = query && query.join(" ");
     if (!this._validateSongQuery(msg, songQuery)) {
@@ -236,18 +328,43 @@ class KevBot {
     this.__updateQueue(msg, this._songqueue.get(msg.guild.id), songQuery);
   }
 
+
+  /**
+   * @method _errorListener
+   * @param {*} err 
+   * 
+   * Method for displaying an error message whenever the bot encounters
+   * an error.
+   */
   _errorListener(err) {
     console.log(chalk.red("error", err));
   }
 
+  /**
+   * @method _readyListener
+   * 
+   * Handler for whenever the bot emits the ready event.
+   */
   _readyListener() {
     console.log(chalk.green("KevBot Ready"));
   }
 
+  /**
+   * @method _getHelp
+   * @param {*} msg 
+   * 
+   * Method for displaying the help menu. WIP
+   */
   _getHelp(msg) {
     msg.channel.send("Help is currently a work in progress.");
   }
-
+  
+  /**
+   * @method _skipSong
+   * @param {*} msg 
+   * 
+   * Method for skipping a song in the queue.
+   */
   _skipSong(msg) {
     if (!msg.member.voiceChannel) {
       console.log(
@@ -270,6 +387,12 @@ class KevBot {
     }
   }
 
+  /**
+   * @method _stopSong
+   * @param {*} msg 
+   * 
+   * Method for stopping all music and clearing the queue.
+   */
   _stopSong(msg) {
     if (!msg.member.voiceChannel) {
       console.log(
@@ -293,12 +416,23 @@ class KevBot {
     }
   }
 
+  /**
+   * @method _addBotListeners
+   * 
+   * Method for adding listeners to the bot on startup.
+   */
   _addBotListeners() {
     this.bot.on("message", message => this._messageListener(message));
     this.bot.on("error", err => this._errorListener(err));
     this.bot.on("ready", () => this._readyListener());
   }
 
+  /**
+   * @method _theDon
+   * @param {*} message
+   * 
+   * Method for displaying the last 5 tweets from Donald Trump. 
+   */
   _theDon(message) {
     TwitterAPI.get(
       "statuses/user_timeline",
@@ -321,6 +455,13 @@ class KevBot {
     );
   }
 
+  /**
+   * @method _sendZalgo
+   * @param {*} msg 
+   * @param {*} args 
+   * 
+   * Method for taking a string and double converting it to crazy text.
+   */
   _sendZalgo(msg, args) {
     if (args) {
       msg.channel.send(toZalgo(toZalgo(args.join(" "))));
@@ -329,11 +470,12 @@ class KevBot {
     }
   }
 
-  _getHelp(message) {
-    let helpMessage = "I'm working on it.";
-    message.channel.send(botMessages.help);
-  }
-
+  /**
+   * @method _chuckNorrisJoke
+   * @param {*} message 
+   * 
+   * Method for grabbing and displaying a random chuck norris joke.
+   */
   _chuckNorrisJoke(message) {
     request(
       "https://api.chucknorris.io/jokes/random",
